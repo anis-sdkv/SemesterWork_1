@@ -1,4 +1,5 @@
 ﻿using Azure;
+using Azure.Core;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -120,7 +121,7 @@ namespace HttpServer.ServerLogic
             }
             Response.Close();
             _buffer = null;
+            Console.WriteLine($"Запрос обработан");
         }
-
     }
 }

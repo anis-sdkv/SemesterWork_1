@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.0.1" />
+    <PackageReference Include="Scriban.Signed" Version="5.5.1" />
   </ItemGroup>
 
   <ItemGroup>

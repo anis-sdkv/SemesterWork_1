@@ -37,7 +37,7 @@ h1 {
   font-weight: normal;
 }
 
-.main_page_header {
+.header {
   display: flex;
   justify-content: space-between;
   padding: 16px 30px;
@@ -54,6 +54,11 @@ h1 {
 
 .nav_link {
   padding: 0px 10px;
+}
+
+.search_form {
+  height: 100px;
+  color: white;
 }
 
 .image_holder {
@@ -79,7 +84,7 @@ h1 {
   cursor: pointer;
 
   background: #ffffff;
-  box-shadow: 0px 12px 0px #962e29;
+  box-shadow: 0px 12px 0px #8b251f;
 }
 
 #btn_go_down .text {
@@ -91,7 +96,7 @@ h1 {
   display: inline;
 }
 
-#btn_go_down img {
+#btn_go_down svg {
   height: 36px;
 }
 

@@ -2,8 +2,6 @@
 using HttpServer.Logger;
 using System.Net;
 using System.Reflection;
-using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace HttpServer.ServerLogic
@@ -27,19 +25,19 @@ namespace HttpServer.ServerLogic
             if (File.Exists(path))
             {
                 var builder = await new ResponseBuilder(response).SetContentAsync(path);
-                await builder.SendAsync();
+                builder.SendAsync();
             }
             else if (TryMethodHandle(context, out var builder))
             {
-                await builder.SendAsync();
+                builder.SendAsync();
             }
             else
             {
-                await new ResponseBuilder(response)
+                new ResponseBuilder(response)
                     .SetNotFoundMessage()
                     .SendAsync();
             }
-            logger.LogMessage($"Запрос обработан: {request.Url}");
+            //logger.LogMessage($"Запрос обработан: {request.Url}");
         }
 
         private bool TryMethodHandle(HttpListenerContext context, out ResponseBuilder builder)
