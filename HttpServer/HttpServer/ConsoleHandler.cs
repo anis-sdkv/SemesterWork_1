@@ -1,52 +1,86 @@
-﻿using HttpServer.Logger;
-using HttpServer.ServerLogic;
+﻿using HttpServer.ServerLogic;
 
-namespace HttpServer
+namespace HttpServer;
+
+internal static class ConsoleHandler
 {
-    class ConsoleHandler
+    private const string ConsoleCommands = "Введите команду:\n" + "1. start - запустить сервер\n" +
+                                           "2. stop - остановить сервер\n" +
+                                           "3. restart - перезапустить сервер\n" +
+                                           "4. status - показать статус сервера\n" +
+                                           "5. update - обновить настройки сервера\n" +
+                                           "6. exit - завершить выполнение программы\n";
+
+    private const string CommandNotFound = "Команда не найдена!";
+    private const string AtTermination = "Программа завершена.";
+    private const string AfterUpdate = "Настройки обновлены.";
+    private const string Pointer = "   >>>   ";
+
+    private static bool _isRunning = true;
+
+    public static void Run(Server server)
     {
-        public static bool IsRunning = true;
-        public static readonly ConsoleLogger logger = new ConsoleLogger();
-
-        public static void Run(Server server)
-        {
-            logger.LogMessage(ConsoleLogger.CONSOLE_COMMANDS);
-            while (IsRunning)
-                HandleConsole(Console.ReadLine().ToLower(), server);
-
-        }
-        static void HandleConsole(string command, Server server)
-        {
-            Console.Clear();
-            logger.LogMessage(ConsoleLogger.CONSOLE_COMMANDS);
-            switch (command)
+        LogM(ConsoleCommands);
+        HandleConsole("start", server);
+        while (_isRunning)
+            try
             {
-                case ("start"):
-                    server.Start();
-                    break;
-
-                case ("stop"):
-                    server.Stop();
-                    break;
-
-                case ("restart"):
-                    server.Restart();
-                    break;
-
-                case ("status"):
-                    logger.LogMessage(server.Status.ToString());
-                    break;
-
-                case ("exit"):
-                    IsRunning = false;
-                    Console.Clear();
-                    logger.LogMessage(ConsoleLogger.AT_TERMINATION);
-                    break;
-
-                default:
-                    logger.LogError(ConsoleLogger.COMMAND_NOT_FOUND);
-                    break;
+                HandleConsole(Console.ReadLine().ToLower(), server);
             }
+            catch (Exception e)
+            {
+                LogE(e);
+            }
+    }
+
+    private static void HandleConsole(string command, Server server)
+    {
+        Console.Clear();
+        LogM(ConsoleCommands);
+        switch (command)
+        {
+            case ("start"):
+                server.Start();
+                break;
+
+            case ("stop"):
+                server.Stop();
+                break;
+
+            case ("restart"):
+                server.Restart();
+                break;
+
+            case ("status"):
+                LogM(server.Status.ToString());
+                break;
+
+            case ("update"):
+                server.UpdateSettings();
+                LogM(AfterUpdate);
+                break;
+
+            case ("exit"):
+                _isRunning = false;
+                Console.Clear();
+                LogM(AtTermination);
+                break;
+
+            default:
+                LogM(CommandNotFound);
+                break;
         }
+    }
+
+    public static void LogM(string message)
+    {
+        Console.WriteLine(DateTime.Now + Pointer + message);
+    }
+
+    public static void LogE(Exception ex)
+    {
+        Console.WriteLine(DateTime.Now + Pointer + "Error was caught:");
+        Console.WriteLine(ex.Message);
+        Console.WriteLine(ex.StackTrace);
     }
 }

@@ -1,78 +1,91 @@
-﻿using Azure.Core;
-using HttpServer.Attributes;
-using HttpServer.Logger;
-using System.Net;
-using System.Reflection.Metadata;
-using System.Runtime;
+﻿using System.Net;
 
-namespace HttpServer.ServerLogic
+namespace HttpServer.ServerLogic;
+
+class Server
 {
-    class Server
+    private const string ServerAlreadyStarted = "Сервер уже запущен!";
+    private const string ServerOnStart = "Запуск сервера...";
+    private const string ServerAfterStart = "Сервер запущен";
+
+    private const string ServerNotStarted = "Сервер еще не запущен!";
+    private const string ServerOnStop = "Остановка сервера...";
+    private const string ServerAfterStop = "Сервер остановлен";
+
+    private readonly HttpListener _listener;
+    private readonly RequestHandler _handler;
+    private ServerSettings _settings;
+    public ServerStatus Status { get; private set; } = ServerStatus.Stopped;
+
+    public Server()
     {
-        private readonly HttpListener _listener;
-        private readonly ServerLogger _logger;
-        private RequestHandler handler;
-        public ServerStatus Status { get; private set; } = ServerStatus.Stopped;
+        _listener = new HttpListener();
+        _handler = new RequestHandler();
+        UpdateSettings();
+    }
 
-        public Server(ServerLogger logger)
+    public void UpdateSettings()
+    {
+        if (_listener.IsListening)
+            throw new Exception("Stop the server before changing the settings.");
+
+        _settings = ServerSettings.ReadFromJson("settings.json");
+        var listeningUrl = $"http://{_settings.IP}:{_settings.Port}/";
+        _listener.Prefixes.Clear();
+        _listener.Prefixes.Add(listeningUrl);
+        _handler.DataDirectory = _settings.DataDirectory;
+        R.SetRoutingBase(listeningUrl);
+    }
+
+    public void Start()
+    {
+        if (Status == ServerStatus.Started)
         {
-            _listener = new HttpListener();
-            _logger = logger;
-            var settings = ServerSettings.ReadFromJson("settings.json");
-            _listener.Prefixes.Clear();
-            _listener.Prefixes.Add($"http://localhost:{settings.Port}/");
-            handler = new RequestHandler(settings.DataDirectoty);
+            ConsoleHandler.LogM(ServerAlreadyStarted);
+            return;
         }
 
-        public void Start()
+        ConsoleHandler.LogM(ServerOnStart);
+        _listener.Start();
+        ConsoleHandler.LogM(ServerAfterStart);
+        Status = ServerStatus.Started;
+
+        Listen();
+    }
+
+    public void Stop()
+    {
+        if (Status == ServerStatus.Stopped)
         {
-            if (Status == ServerStatus.Started)
+            ConsoleHandler.LogM(ServerNotStarted);
+            return;
+        }
+
+        ConsoleHandler.LogM(ServerOnStop);
+        _listener.Stop();
+        ConsoleHandler.LogM(ServerAfterStop);
+        Status = ServerStatus.Stopped;
+    }
+
+    public void Restart()
+    {
+        if (Status == ServerStatus.Started)
+            Stop();
+        Start();
+    }
+
+    private async Task Listen()
+    {
+        while (_listener.IsListening)
+        {
+            try
             {
-                _logger.LogMessage(ServerLogger.SERVER_ALREADY_STARTED);
-                return;
+                var context = await _listener.GetContextAsync();
+                await _handler.Handle(context);
             }
-
-            _logger.LogMessage(ServerLogger.SERVER_ON_START);
-            _listener.Start();
-            _logger.LogMessage(ServerLogger.SERVER_AFTER_START);
-            Status = ServerStatus.Started;
-
-            Listen();
-        }
-
-        public void Stop()
-        {
-            if (Status == ServerStatus.Stopped)
+            catch (Exception ex)
             {
-                _logger.LogMessage(ServerLogger.SERVER_NOT_STARTED);
-                return;
-            }
-            _logger.LogMessage(ServerLogger.SERVER_ON_STOP);
-            _listener.Stop();
-            _logger.LogMessage(ServerLogger.SERVER_AFTER_STOP);
-            Status = ServerStatus.Stopped;
-        }
-
-        public void Restart()
-        {
-            if (Status == ServerStatus.Started)
-                Stop();
-            Start();
-        }
-
-        private async Task Listen()
-        {
-            while (_listener.IsListening)
-            {
-                try
-                {
-                    var context = await _listener.GetContextAsync();
-                    await handler.Handle(context, _logger);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex.StackTrace + ex.Message);
-                }
+                ConsoleHandler.LogE(ex);
             }
         }
     }

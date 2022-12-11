@@ -1,91 +1,100 @@
 ﻿using HttpServer.Attributes;
-using HttpServer.Logger;
 using System.Net;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using HttpServer.ServerResponse;
+using HttpMethod = HttpServer.Attributes.HttpMethod;
 
 namespace HttpServer.ServerLogic
 {
-    class RequestHandler
+    internal class RequestHandler
     {
-        public string DataDirectory { get; set; }
-        public RequestHandler(string dataDir)
+        private string? _dataDir;
+
+        public string DataDirectory
         {
-            DataDirectory = dataDir;
+            get
+            {
+                if (_dataDir == null)
+                    throw new ArgumentException("Data directory is not set!");
+                return _dataDir;
+            }
+            set => _dataDir = value;
         }
 
-        public async Task Handle(HttpListenerContext context, ServerLogger logger)
+        public async Task Handle(HttpListenerContext context)
         {
-            logger.LogMessage($"Запрос получен: {context.Request.Url}");
+            ConsoleHandler.LogM($"Запрос получен: {context.Request.Url}");
             var request = context.Request;
-            var response = context.Response;
 
-            var path = DataDirectory + (request.Url.LocalPath != "/" ? request.Url.LocalPath : "/index.html");
+            var path = DataDirectory + request.Url.LocalPath;
 
-            if (File.Exists(path))
+            try
             {
-                var builder = await new ResponseBuilder(response).SetContentAsync(path);
-                builder.SendAsync();
+                if (!TrySendStatic(context, path) && !await TryMethodHandleAsync(context))
+                    await new NotFound().SendResponse(context);
             }
-            else if (TryMethodHandle(context, out var builder))
+            catch (Exception ex)
             {
-                builder.SendAsync();
+                ConsoleHandler.LogE(ex);
+                // new ResponseBuilder(context).SetStatusCode((int)HttpStatusCode.InternalServerError)
+                //     .SendAsync();
             }
-            else
-            {
-                new ResponseBuilder(response)
-                    .SetNotFoundMessage()
-                    .SendAsync();
-            }
-            //logger.LogMessage($"Запрос обработан: {request.Url}");
         }
 
-        private bool TryMethodHandle(HttpListenerContext context, out ResponseBuilder builder)
+        private bool TrySendStatic(HttpListenerContext context, string path)
+        {
+            if (!File.Exists(path))
+                return false;
+            Task.Run(() => new StaticFile(path).SendResponse(context));
+            return true;
+        }
+
+        private async Task<bool> TryMethodHandleAsync(HttpListenerContext context)
         {
             var request = context.Request;
-            builder = null;
-            if (request.Url.Segments.Length < 2) return false;
+            if (request.Url!.Segments.Length < 2) return false;
 
-            string controllerName = request.Url.Segments[1].Replace("/", "");
+            var controllerName = request.Url.Segments[1].Replace("/", "");
+            var assembly = Assembly.GetExecutingAssembly();
+            var controller = assembly
+                .GetTypes()
+                .FirstOrDefault(t => Attribute.IsDefined(t, typeof(HttpController))
+                                     && ((t.GetCustomAttribute(typeof(HttpController)) as HttpController)
+                                         ?.ControllerName == controllerName
+                                         || String.Equals(t.Name, controllerName,
+                                             StringComparison.CurrentCultureIgnoreCase)));
+            if (controller == null) return false;
 
-            string[] strParams = request.Url.Segments
-                .Skip(2)
+            var methodUri = request.Url.Segments.Length > 2
+                ? request.Url.Segments[2].Replace("/", "")
+                : "";
+            var method = controller
+                .GetMethods()
+                .FirstOrDefault(t => t.GetCustomAttributes(true)
+                    .Any(attr => attr.GetType().Name == $"Http{request.HttpMethod}"
+                                 && Regex.IsMatch(methodUri, ((HttpMethod)attr).MethodURI)));
+            if (method == null) return false;
+
+            var strParams = request.Url.Segments
+                .Skip(3)
                 .Select(s => s.Replace("/", ""))
                 .ToArray();
 
-            var assembly = Assembly.GetExecutingAssembly();
-
-            var controller = assembly
-                .GetTypes()
-                .Where(t => Attribute.IsDefined(t, typeof(HttpController))
-                    && ((t.GetCustomAttribute(typeof(HttpController)) as HttpController)?.ControllerName == controllerName
-                    || t.Name.ToLower() == controllerName.ToLower()))
-                    .FirstOrDefault();
-            if (controller == null) return false;
-
-            var methodURI = strParams.Length > 0 ? strParams[0] : "";
-            var method = controller
-                .GetMethods()
-                .Where(t => t.GetCustomAttributes(true)
-                    .Any(attr => attr.GetType().Name == $"Http{request.HttpMethod}"
-                        && Regex.IsMatch(methodURI, ((Attributes.HttpMethod)attr).MethodURI)))
-                .FirstOrDefault();
-            if (method == null) return false;
-
-            if (request.HttpMethod == "POST")   
+            if (request.HttpMethod == "POST")
                 strParams = ParseBody(GetPostBody(request));
 
-            object[] queryParams = method
+            var queryParams = method
                 .GetParameters()
-                .SkipLast(1)
                 .Select((p, i) => Convert.ChangeType(strParams[i], p.ParameterType))
-                .Append(context)
                 .ToArray();
 
-            var result = method.Invoke(
-                Activator.CreateInstance(controller),
-                queryParams);
-            builder = (ResponseBuilder)result;
+            if (queryParams.Length != strParams.Length)
+                return false;
+
+            var result =
+                (IServerResponse)await (method.Invoke(Activator.CreateInstance(controller), queryParams) as dynamic)!;
+            Task.Run(() => result.SendResponse(context));
 
             return true;
         }
@@ -94,13 +103,9 @@ namespace HttpServer.ServerLogic
         {
             if (!request.HasEntityBody)
                 return "";
-            using (var stream = request.InputStream)
-            {
-                using (var sr = new StreamReader(stream))
-                {
-                    return sr.ReadToEnd();
-                }
-            }
+            using var stream = request.InputStream;
+            using var sr = new StreamReader(stream);
+            return sr.ReadToEnd();
         }
 
         private static string[] ParseBody(string body)
@@ -110,6 +115,5 @@ namespace HttpServer.ServerLogic
                 .Select(p => p.Replace("+", "").Split('=')[1])
                 .ToArray();
         }
-
     }
 }

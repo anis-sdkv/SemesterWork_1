@@ -1,0 +1,53 @@
+:root {
+  font-family: "Inter", Sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 24px;
+}
+@supports (font-variation-settings: normal) {
+  :root {
+    font-family: "Inter var", sans-serif;
+  }
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: black;
+  overflow: hidden;
+}
+
+.content {
+  display: flex;
+}
+
+.container {
+  width: 50%;
+  aspect-ratio: 1 / 1;
+}
+
+.text {
+  width: 50%;
+  display: flex;
+  gap: 40px;
+  justify-content: center;
+  flex-direction: column;
+  padding-left: 80px;
+  color: #70809d;
+}
+
+.error {
+  font-family: "Red October", arial;
+  line-height: 120px;
+  font-size: 120px;
+}
+
+.not_found {
+  height: fit-content;
+  font-family: "Inter", Sans-serif;
+  font-size: 40px;
+  line-height: 40px;
+}

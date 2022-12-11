@@ -7,10 +7,11 @@ using System.Threading.Tasks;
 
 namespace HttpServer.ServerLogic
 {
-    class ServerSettings
+    internal class ServerSettings
     {
-        public int Port { get; set; } = 8888;
-        public string DataDirectoty { get; set; } = "site";
+        public string IP { get; set; }
+        public int Port { get; set; }
+        public string DataDirectory { get; set; }
 
         public static ServerSettings ReadFromJson(string path)
         {

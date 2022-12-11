@@ -1,15 +1,13 @@
-﻿using HttpServer.Logger;
-using HttpServer.ServerLogic;
+﻿using HttpServer.ServerLogic;
+using System.Net;
 
-namespace HttpServer
+namespace HttpServer;
+
+class Program
 {
-    class Program
+    static void Main(string[] args)
     {
-
-        static void Main(string[] args)
-        {
-            var server = new Server(ConsoleHandler.logger);
-            ConsoleHandler.Run(server);
-        }
+        var server = new Server();
+        ConsoleHandler.Run(server);
     }
 }

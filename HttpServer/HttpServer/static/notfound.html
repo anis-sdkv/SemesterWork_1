@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="css/notfound.css" />
+
+    <link rel="preconnect" href="https://rsms.me/" />
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+    <link rel="stylesheet" href="fonts/RedOktober/stylesheet.css" />
+    <title>404 - not found</title>
+  </head>
+  <body>
+    <script>
+      var audio = new Audio("res/audio/bgTrack.mp3");
+      document.addEventListener("click", musicPlay);
+      function musicPlay() {
+        audio.play();
+        document.removeEventListener("click", musicPlay);
+      }
+    </script>
+
+    <div class="content">
+      <div class="container"></div>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.139.0/build/three.module.js",
+          "OrbitControls": "https://unpkg.com/three@0.139.0/examples/jsm/controls/OrbitControls.js",
+          "GLTFLoader": "https://unpkg.com/three@0.139.0/examples/jsm/loaders/GLTFLoader.js",
+          "RectAreaLightHelper": "https://unpkg.com/three@0.139.0/examples/jsm/helpers/RectAreaLightHelper.js",
+          "RectAreaLightUniformsLib": "https://unpkg.com/three@0.139.0/examples/jsm/lights/RectAreaLightUniformsLib.js"
+        }
+      }
+    </script>
+    <script src="js/notfound/scene.js" type="module"></script>
+  </body>
+</html>
