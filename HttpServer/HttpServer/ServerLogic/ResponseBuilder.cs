@@ -115,7 +115,7 @@
 //         public ResponseBuilder SetCookie(Cookie cookie)
 //         {
 //             Response.SetCookie(cookie);
-//             return this;
+//             return this; 
 //         }
 //
 //         public ResponseBuilder SetStatusCode(int code)

@@ -8,7 +8,7 @@ namespace HttpServer.Attributes
 {
     public class HttpController : Attribute
     {
-        public string? ControllerName;
+        public readonly string? ControllerName;
         public HttpController(string name)
         {
             ControllerName = name;

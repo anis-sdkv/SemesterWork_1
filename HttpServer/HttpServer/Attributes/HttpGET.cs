@@ -8,7 +8,7 @@ namespace HttpServer.Attributes
 {
     public class HttpGET : HttpMethod
     {
-        public HttpGET(string methodURI) : base(methodURI) { }
+        public HttpGET(string methodUri) : base(methodUri) { }
         public HttpGET() : base() { }
     }
 }

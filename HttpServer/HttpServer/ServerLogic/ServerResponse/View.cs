@@ -1,11 +1,13 @@
-﻿using System.Net;
+﻿using System.Dynamic;
+using System.Net;
 using System.Text;
-using HttpServer.ServerLogic;
+using System.Text.Json;
+using HttpServer.Sessions;
 using Scriban;
 
-namespace HttpServer.ServerResponse;
+namespace HttpServer.ServerLogic.ServerResponse;
 
-public class View : IServerResponse
+public class View : Response
 {
     private const string ResponseTag = "view";
     private readonly object _model;
@@ -20,10 +22,10 @@ public class View : IServerResponse
     public override async Task SendResponse(HttpListenerContext context)
     {
         var page = await R.GetStringAsync(_viewPath);
-
         var template = Template.Parse(page);
         var res = await template.RenderAsync(_model);
         var buffer = Encoding.UTF8.GetBytes(res);
-        await CloseResponse(context, buffer, ResponseTag);
+        await WriteBuffer(context, buffer);
+        CloseResponse(context, ResponseTag);
     }
 }

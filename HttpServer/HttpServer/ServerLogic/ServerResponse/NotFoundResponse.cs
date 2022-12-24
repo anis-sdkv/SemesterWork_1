@@ -2,9 +2,9 @@
 using System.Text;
 using Scriban;
 
-namespace HttpServer.ServerResponse;
+namespace HttpServer.ServerLogic.ServerResponse;
 
-public class NotFound : IServerResponse
+public class NotFoundResponse : Response
 {
     private const string ResponseTag = "not found";
     public override async Task SendResponse(HttpListenerContext context)
@@ -14,6 +14,7 @@ public class NotFound : IServerResponse
         var template = Template.Parse(page);
         var res = await template.RenderAsync(new { routing = R.RoutingBase });
         var buffer = Encoding.UTF8.GetBytes(res);
-        CloseResponse(context, buffer, ResponseTag);
+        await WriteBuffer(context, buffer);
+        CloseResponse(context,ResponseTag);
     }
 }

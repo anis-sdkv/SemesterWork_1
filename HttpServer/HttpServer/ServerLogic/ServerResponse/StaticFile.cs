@@ -1,10 +1,8 @@
 ﻿using System.Net;
-using System.Text;
-using HttpServer.ServerLogic;
 
-namespace HttpServer.ServerResponse;
+namespace HttpServer.ServerLogic.ServerResponse;
 
-public class StaticFile : IServerResponse
+public class StaticFile : Response
 {
     private const string ResponseTag = "static";
     private readonly string _filePath;
@@ -17,7 +15,7 @@ public class StaticFile : IServerResponse
     public override async Task SendResponse(HttpListenerContext context)
     {
         context.Response.ContentType = MimeMap.GetMimeType(Path.GetExtension(_filePath));
-        var buffer = await R.GetBytesAsync(_filePath);
-        await CloseResponse(context, buffer, ResponseTag);
+        await WriteFileAsync(context, _filePath);
+        CloseResponse(context,ResponseTag);
     }
 }

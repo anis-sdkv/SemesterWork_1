@@ -12,6 +12,7 @@ namespace HttpServer.ServerLogic
         public string IP { get; set; }
         public int Port { get; set; }
         public string DataDirectory { get; set; }
+        public  string ConnectionString { get; set; }
 
         public static ServerSettings ReadFromJson(string path)
         {

@@ -9,9 +9,9 @@ namespace HttpServer.Attributes
     public abstract class HttpMethod : Attribute
     {
         public string MethodURI;
-        public HttpMethod(string methodURI)
+        public HttpMethod(string methodUri)
         {
-            MethodURI = methodURI;
+            MethodURI = methodUri;
         }
         public HttpMethod()
         {

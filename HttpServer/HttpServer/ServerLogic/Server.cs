@@ -1,4 +1,6 @@
 ﻿using System.Net;
+using HttpServer.DB;
+using HttpServer.DB.ORM;
 
 namespace HttpServer.ServerLogic;
 
@@ -14,11 +16,12 @@ class Server
 
     private readonly HttpListener _listener;
     private readonly RequestHandler _handler;
-    private ServerSettings _settings;
+    private readonly int _accepts;
     public ServerStatus Status { get; private set; } = ServerStatus.Stopped;
 
-    public Server()
+    public Server(int accepts = 4)
     {
+        _accepts = accepts;
         _listener = new HttpListener();
         _handler = new RequestHandler();
         UpdateSettings();
@@ -29,12 +32,14 @@ class Server
         if (_listener.IsListening)
             throw new Exception("Stop the server before changing the settings.");
 
-        _settings = ServerSettings.ReadFromJson("settings.json");
-        var listeningUrl = $"http://{_settings.IP}:{_settings.Port}/";
+        var settings = ServerSettings.ReadFromJson("settings.json");
+        var listeningUrl = $"http://{settings.IP}:{settings.Port}/";
         _listener.Prefixes.Clear();
         _listener.Prefixes.Add(listeningUrl);
-        _handler.DataDirectory = _settings.DataDirectory;
+        _handler.DataDirectory = settings.DataDirectory;
         R.SetRoutingBase(listeningUrl);
+
+        MyORM.Init(settings.ConnectionString);
     }
 
     public void Start()
@@ -46,11 +51,17 @@ class Server
         }
 
         ConsoleHandler.LogM(ServerOnStart);
-        _listener.Start();
-        ConsoleHandler.LogM(ServerAfterStart);
-        Status = ServerStatus.Started;
-
-        Listen();
+        try
+        {
+            _listener.Start();
+            ConsoleHandler.LogM(ServerAfterStart);
+            Status = ServerStatus.Started;
+            Listen();
+        }
+        catch (HttpListenerException e)
+        {
+            ConsoleHandler.LogE(e);
+        }
     }
 
     public void Stop()
@@ -62,9 +73,16 @@ class Server
         }
 
         ConsoleHandler.LogM(ServerOnStop);
-        _listener.Stop();
-        ConsoleHandler.LogM(ServerAfterStop);
-        Status = ServerStatus.Stopped;
+        try
+        {
+            _listener.Stop();
+            ConsoleHandler.LogM(ServerAfterStop);
+            Status = ServerStatus.Stopped;
+        }
+        catch (HttpListenerException e)
+        {
+            ConsoleHandler.LogE(e);
+        }
     }
 
     public void Restart()
@@ -74,19 +92,38 @@ class Server
         Start();
     }
 
-    private async Task Listen()
+    private void Listen()
     {
+        var sem = new Semaphore(_accepts, _accepts);
+
         while (_listener.IsListening)
         {
-            try
+            sem.WaitOne();
+
+            _listener.GetContextAsync().ContinueWith(async (t) =>
             {
-                var context = await _listener.GetContextAsync();
-                await _handler.Handle(context);
-            }
-            catch (Exception ex)
-            {
-                ConsoleHandler.LogE(ex);
-            }
+                try
+                {
+                    sem.Release();
+                    var context = await t;
+                    await _handler.Handle(context);
+                }
+                catch (Exception ex)
+                {
+                    ConsoleHandler.LogE(ex);
+                }
+            });
         }
+        
+        // try
+        // {
+        //     context = await _listener.GetContextAsync();
+        //     _handler.Handle(context);
+        // }
+        // catch (Exception e)
+        // {
+        //     ConsoleHandler.LogE(e);
+        // }
     }
+
 }

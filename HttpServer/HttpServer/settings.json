@@ -1,5 +1,6 @@
 {
   "IP": "localhost",
   "Port": 8080,
-  "DataDirectory": "debug/static"
+  "DataDirectory": "debug/static",
+  "ConnectionString": "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BolshevikDB;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False"
 }

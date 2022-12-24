@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace HttpServer.Sessions
 {
-    class Session
+    public class Session
     {
         public Guid Guid { get; set; }
         public int AccountId { get; set; }

@@ -1,4 +1,5 @@
 ﻿using HttpServer.ServerLogic;
+using HttpServer.Sessions;
 
 namespace HttpServer;
 
@@ -17,15 +18,16 @@ internal static class ConsoleHandler
     private const string Pointer = "   >>>   ";
 
     private static bool _isRunning = true;
+    private static Server? _server;
 
-    public static void Run(Server server)
+    public static void Run(Server? server)
     {
-        LogM(ConsoleCommands);
+        _server = server;
         HandleConsole("start", server);
         while (_isRunning)
             try
             {
-                HandleConsole(Console.ReadLine().ToLower(), server);
+                HandleConsole(Console.ReadLine()?.ToLower(), server);
             }
             catch (Exception e)
             {
@@ -33,9 +35,8 @@ internal static class ConsoleHandler
             }
     }
 
-    private static void HandleConsole(string command, Server server)
+    private static void HandleConsole(string? command, Server? server)
     {
-        Console.Clear();
         LogM(ConsoleCommands);
         switch (command)
         {
@@ -82,5 +83,6 @@ internal static class ConsoleHandler
         Console.WriteLine(DateTime.Now + Pointer + "Error was caught:");
         Console.WriteLine(ex.Message);
         Console.WriteLine(ex.StackTrace);
+        Console.WriteLine("Server status:   " + _server?.Status.ToString());
     }
 }
